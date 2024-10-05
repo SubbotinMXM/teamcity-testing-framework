@@ -1,6 +1,5 @@
-package com.example.teamcity.config;
+package com.example.teamcity.api.config;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;

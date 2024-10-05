@@ -1,5 +1,7 @@
 package com.example.teamcity.api.model;
 
+import com.example.teamcity.api.annotations.Optional;
+import com.example.teamcity.api.annotations.Parameterizable;
 import com.example.teamcity.api.annotations.Random;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
@@ -12,15 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class User extends BaseModel{
+public class BuildType extends BaseModel{
+    @Random
+    @Parameterizable
     private String id;
 
     @Random
-    private String username;
+    private String name;
 
-    @Random
-    private String password;
+    private Project project;
 
-    private Roles roles;
-
+    private Steps steps;
 }
