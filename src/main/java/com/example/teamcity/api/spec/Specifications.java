@@ -11,8 +11,6 @@ import static io.restassured.http.ContentType.JSON;
 
 public class Specifications {
 
-//    private static Specifications spec;
-
     private static RequestSpecBuilder reqBuilder() {
         var requestBuilder = new RequestSpecBuilder();
         requestBuilder.addFilter(new RequestLoggingFilter())
