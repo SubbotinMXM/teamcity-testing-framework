@@ -6,6 +6,7 @@ import com.example.teamcity.api.model.Project;
 import com.example.teamcity.api.model.Roles;
 import com.example.teamcity.api.model.User;
 import com.example.teamcity.api.requests.CheckedRequests;
+import com.example.teamcity.api.requests.UncheckedRequests;
 import com.example.teamcity.api.requests.unchecked.UncheckedBase;
 import com.example.teamcity.api.spec.Specifications;
 import org.apache.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static com.example.teamcity.api.enums.Endpoint.*;
 import static com.example.teamcity.api.generators.TestDataGenerator.generate;
 import static io.qameta.allure.Allure.step;
 
@@ -28,18 +30,18 @@ public class BuildTypeTest extends BaseApiTest {
     @Tag("CRUD")
     void userCreatesBuildTypeTest() {
         superUserCheckRequests // в эту одну переменную сразу вынесено формирование url для авторизации супер юзером (без эндпоинта)
-                .getRequest(Endpoint.USERS).create(testData.getUser()); // добавляется эндпоинт и отправляется запрос на создание юзера.
+                .getRequest(USERS).create(testData.getUser()); // добавляется эндпоинт и отправляется запрос на создание юзера.
         // В testData уже лежат сгенерированные данные. Нужно только их подложить в запрос
         // По умолчанию созданному юзеру присваивается роль SYSTEM_ADMIN
 
         var userCheckRequests = new CheckedRequests(Specifications.authSpec(testData.getUser())); // Формируется url с авторизационными данными и хостом
-        userCheckRequests.<Project>getRequest(Endpoint.PROJECTS) // добавляется эндпоинт для созданя проекта
+        userCheckRequests.<Project>getRequest(PROJECTS) // добавляется эндпоинт для созданя проекта
                 .create(testData.getProject()); // а здесь отправляется запрос и подкладывается тело для создания проекта
 
-        userCheckRequests.getRequest(Endpoint.BUILD_TYPES) // формируется url на другой эндпоинт, но с той же спекой на авторизацию по юзеру что и выше
+        userCheckRequests.getRequest(BUILD_TYPES) // формируется url на другой эндпоинт, но с той же спекой на авторизацию по юзеру что и выше
                 .create(testData.getBuildType()); // отправляется запрос и подкладывается тело на создание buildType
 
-        var createdBuildType = userCheckRequests.<BuildType>getRequest(Endpoint.BUILD_TYPES)
+        var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES)
                 .read(testData.getBuildType().getId()); // То же самое что выше, только тут еще сохраняем по id созданные
         // buildType и не создаем его, а делаем запрос на получение его по id
 
@@ -54,18 +56,18 @@ public class BuildTypeTest extends BaseApiTest {
     @Tag("CRUD")
     void userCreatesTwoBuildTypesWithTheSameIdTest() {
         // Суперюзером создали нового юзера
-        superUserCheckRequests.getRequest(Endpoint.USERS).create(testData.getUser());
+        superUserCheckRequests.getRequest(USERS).create(testData.getUser());
 
         var userCheckRequests = new CheckedRequests(Specifications.authSpec(testData.getUser()));
 
-        userCheckRequests.<Project>getRequest(Endpoint.PROJECTS).create(testData.getProject());
+        userCheckRequests.<Project>getRequest(PROJECTS).create(testData.getProject());
 
         var buildTypeWithSameId = generate(Arrays.asList(testData.getProject()),
                 BuildType.class, testData.getBuildType().getId());
 
-        userCheckRequests.getRequest(Endpoint.BUILD_TYPES).create(testData.getBuildType());
+        userCheckRequests.getRequest(BUILD_TYPES).create(testData.getBuildType());
 
-        new UncheckedBase(Specifications.authSpec(testData.getUser()), Endpoint.BUILD_TYPES)
+        new UncheckedBase(Specifications.authSpec(testData.getUser()), BUILD_TYPES)
                 .create(buildTypeWithSameId)
                 .then()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
@@ -79,21 +81,27 @@ public class BuildTypeTest extends BaseApiTest {
     @Tag("Positive")
     @Tag("Roles")
     void projectAdminCreatesBuildTypeTest() {
-        step("Create user");
-        var createdUser = superUserCheckRequests.<User>getRequest(Endpoint.USERS).create(testData.getUser());
+        step("Create project");
+        superUserCheckRequests.getRequest(PROJECTS).create(testData.getProject());
 
-        step("Create project by user");
-        var userCheckRequests = new CheckedRequests(Specifications.authSpec(testData.getUser()));
-        userCheckRequests.<Project>getRequest(Endpoint.PROJECTS).create(testData.getProject());
-
-        step("Grant user PROJECT_ADMIN role in project");
+        step("Create user-admin for project");
         testData.getUser().setRoles(generate(Roles.class, "PROJECT_ADMIN", "p:" + testData.getProject().getId()));
-        superUserCheckRequests.<User>getRequest(Endpoint.USERS).update(createdUser.getId(), testData.getUser());
+        superUserCheckRequests.getRequest(USERS).create(testData.getUser());
 
-        step("Create buildType for project by user (PROJECT_ADMIN)");
-        userCheckRequests.getRequest(Endpoint.BUILD_TYPES).create(testData.getBuildType());
+        step("Create buildType by user-admin for project");
+        var userCheckRequests = new CheckedRequests(Specifications.authSpec(testData.getUser()));
+        var createdBuildTypeId = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).create(testData.getBuildType()).getId();
 
-        step("Check buildType was created successfully");
+        step("Read created buildType");
+        var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read(createdBuildTypeId);
+
+        step("Assertions");
+        softy.assertThat(testData.getBuildType().getName())
+                .withFailMessage("Build type name is not correct")
+                .isEqualTo(createdBuildType.getName());
+        softy.assertThat(testData.getBuildType().getId())
+                .withFailMessage("Project for build type is not correct")
+                .isEqualTo(createdBuildType.getId());
     }
 
     @Test
@@ -101,15 +109,30 @@ public class BuildTypeTest extends BaseApiTest {
     @Tag("Negative")
     @Tag("Roles")
     void projectAdminCreatesBuildTypeForAnotherUserProjectTest() {
-        step("Create user1");
-        step("Create project by user1");
-        step("Grant user PROJECT_ADMIN1 role in project1");
+        step("Create project1");
+        superUserCheckRequests.getRequest(PROJECTS).create(testData.getProject());
 
-        step("Create user2");
-        step("Create project by user2");
-        step("Grant user PROJECT_ADMIN2 role in project2");
+        step("Create user1 with PROJECT_ADMIN role for project1");
+        testData.getUser().setRoles(generate(Roles.class, "PROJECT_ADMIN", "p:" + testData.getProject().getId()));
+        superUserCheckRequests.getRequest(USERS).create(testData.getUser());
 
-        step("Create buildType for project1 by user2");
-        step("Check buildType was not created with bad request code");
+        step("Create project2");
+        var project2 = generate(Project.class);
+        superUserCheckRequests.getRequest(PROJECTS).create(project2);
+
+        step("Create user2 with PROJECT_ADMIN role for project2");
+        var user2 = generate(User.class);
+        user2.setRoles(generate(Roles.class, "PROJECT_ADMIN", "p:" + project2.getId()));
+        superUserCheckRequests.getRequest(USERS).create(user2);
+
+        step("Create buildType for project1 by user2 and check it was not created with forbidden code 403");
+        var buildType = generate(Arrays.asList(testData.getProject()), BuildType.class);
+        var userUncheckedRequest = new UncheckedRequests(Specifications.authSpec(user2));
+        userUncheckedRequest.getRequest(BUILD_TYPES)
+                .create(buildType)
+                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN)
+                .body(Matchers.containsString(("You do not have enough permissions to edit project with id: %s\n" +
+                                               "Access denied. Check the user has enough permissions to perform the operation.")
+                        .formatted(testData.getProject().getId())));
     }
 }
