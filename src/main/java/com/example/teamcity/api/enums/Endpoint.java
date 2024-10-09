@@ -1,11 +1,10 @@
 package com.example.teamcity.api.enums;
 
-import com.example.teamcity.api.model.BaseModel;
-import com.example.teamcity.api.model.BuildType;
-import com.example.teamcity.api.model.Project;
-import com.example.teamcity.api.model.User;
+import com.example.teamcity.api.model.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import javax.management.relation.RoleStatus;
 
 @AllArgsConstructor
 @Getter
