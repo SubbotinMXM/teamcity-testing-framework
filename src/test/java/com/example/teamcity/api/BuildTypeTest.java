@@ -125,7 +125,7 @@ public class BuildTypeTest extends BaseApiTest {
         user2.setRoles(generate(Roles.class, "PROJECT_ADMIN", "p:" + project2.getId()));
         superUserCheckRequests.getRequest(USERS).create(user2);
 
-        step("Create buildType for project1 by user2 and check it was not created with forbidden code 403");
+        step("Create buildType for project1 by user2 and check code 403");
         var buildType = generate(Arrays.asList(testData.getProject()), BuildType.class);
         var userUncheckedRequest = new UncheckedRequests(Specifications.authSpec(user2));
         userUncheckedRequest.getRequest(BUILD_TYPES)
