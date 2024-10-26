@@ -42,7 +42,7 @@ public class BuildTypeTest extends BaseApiTest {
                 .create(testData.getBuildType()); // отправляется запрос и подкладывается тело на создание buildType
 
         var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES)
-                .read(testData.getBuildType().getId()); // То же самое что выше, только тут еще сохраняем по id созданные
+                .read("id:" + testData.getBuildType().getId()); // То же самое что выше, только тут еще сохраняем по id созданные
         // buildType и не создаем его, а делаем запрос на получение его по id
 
         softy.assertThat(testData.getBuildType().getName())
@@ -93,7 +93,7 @@ public class BuildTypeTest extends BaseApiTest {
         var createdBuildTypeId = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).create(testData.getBuildType()).getId();
 
         step("Read created buildType");
-        var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read(createdBuildTypeId);
+        var createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read("id:" + createdBuildTypeId);
 
         step("Assertions");
         softy.assertThat(testData.getBuildType().getName())
