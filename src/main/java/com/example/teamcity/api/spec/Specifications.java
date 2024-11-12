@@ -1,12 +1,17 @@
 package com.example.teamcity.api.spec;
 
 import com.example.teamcity.api.model.User;
+import com.github.viclovsky.swagger.coverage.FileSystemOutputWriter;
+import com.github.viclovsky.swagger.coverage.SwaggerCoverageRestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.specification.RequestSpecification;
 
+import java.nio.file.Paths;
+
 import static com.example.teamcity.api.config.Config.getConfig;
+import static com.github.viclovsky.swagger.coverage.SwaggerCoverageConstants.OUTPUT_DIRECTORY;
 import static io.restassured.http.ContentType.JSON;
 
 public class Specifications {
@@ -15,6 +20,11 @@ public class Specifications {
         var requestBuilder = new RequestSpecBuilder();
         requestBuilder.addFilter(new RequestLoggingFilter())
                 .addFilter(new ResponseLoggingFilter())
+                .addFilter(new SwaggerCoverageRestAssured(
+                        new FileSystemOutputWriter(
+                                Paths.get("build/" + OUTPUT_DIRECTORY)
+                        )
+                ))
                 .addHeader("Accept", "application/json")
                 .build();
         return requestBuilder;

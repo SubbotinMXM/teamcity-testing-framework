@@ -45,6 +45,6 @@ public class UncheckedBase extends Request implements CrudInterface {
     public Response delete(String locator) {
         return given()
                 .spec(spec)
-                .delete(endpoint.getUrl() + "/" + locator);
+                .delete(endpoint.getUrl() + "/id:" + locator);
     }
 }

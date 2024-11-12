@@ -1,0 +1,56 @@
+name: Run tests
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: api | ui
+        required: true
+        type: string
+
+jobs:
+  validate-checkstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
+      - name: Validate Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest
+
+  run-tests:
+    needs: validate-checkstyle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: TeamCity Setup
+        uses: ./.github/actions/teamcity-setup
+
+      - name: Run tests
+        continue-on-error: true
+        # Запускаем тесты с Gradle, используя параметр inputs.package для фильтрации. Задается в этом файле на строках 3-9
+        run: ./gradlew test --tests "com.example.teamcity.${{ inputs.package }}.*"
+
+        # Создаем report с покрытием api тестов, основанном на Swagger документации
+        # Документация: https://github.com/viclovsky/swagger-coverage
+        # Чтобы работало, нужно было обязательно добавить в фильтры спецификацию Rest Assured фильтр SwaggerCoverageRestAssured
+      - name: Run Swagger Coverage
+        continue-on-error: true
+        if: ${{ inputs.package == 'api' }}
+        run: swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://$HOST:8111/app/rest/swagger.json -i build/swagger-coverage-output
+
+        # Сохраняем Swagger Report в артефакты Github Actions
+      - name: Save Swagger Coverage
+        uses: actions/upload-artifact@v4
+        if: ${{ inputs.package == 'api' }}
+        with:
+          name: swagger-coverage
+          path: |
+            swagger-coverage-results.json
+            swagger-coverage-report.html

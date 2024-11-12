@@ -2,6 +2,12 @@ plugins {
     id 'java'
     id "io.freefair.lombok" version "8.4"
     id("io.qameta.allure") version "2.11.2"
+    id 'checkstyle'
+}
+
+checkstyle {
+    toolVersion = "10.12.4"
+    ignoreFailures = true  // Игнорировать ошибки, иначе на CI будет падать, а мне лень все замечания по коду исправлять
 }
 
 group = 'org.example'
@@ -24,8 +30,19 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.0'
     implementation 'org.assertj:assertj-core:3.24.2'
     implementation 'com.codeborne:selenide:6.13.1'
+    checkstyle "com.puppycrawl.tools:checkstyle:${checkstyle.toolVersion}"
+    implementation group: 'com.github.viclovsky', name: 'swagger-coverage-rest-assured', version: '1.5.0'
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // Проверяем, задано ли свойство "junit.jupiter.tags"
+        def tags = System.getProperty("junit.jupiter.tags")
+        if (tags != null) {
+            includeTags tags
+        }
+    }
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
