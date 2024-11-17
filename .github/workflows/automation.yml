@@ -43,7 +43,7 @@ jobs:
       - name: Run Swagger Coverage
         continue-on-error: true
         if: ${{ inputs.package == 'api' }}
-        run: swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://$HOST:8111/app/rest/swagger.json -i build/swagger-coverage-output
+        run: .swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://$HOST:8111/app/rest/swagger.json -i build/swagger-coverage-output
 
         # Сохраняем Swagger Report в артефакты Github Actions
       - name: Save Swagger Coverage
