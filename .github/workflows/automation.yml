@@ -70,7 +70,7 @@ jobs:
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: target/allure-results
+          allure_results: build/allure-results
           subfolder: ${{ inputs.package }}
 
       # Создаем пустую ветку gh-pages на основе инструкции https://gist.github.com/ramnathv/2227408
